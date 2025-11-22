@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет врача</title>
+    <style>
+        :root {
+            --text-white: #ffffff;
+            --text-label: #dbeafe;
+            --text-dark: #3c5a79;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --card-radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            /* Градиент фона */
+            background: linear-gradient(160deg, #9aabbd 0%, #8faecf 40%, #99b2cd 100%);
+            min-height: 100vh;
+            color: var(--text-white);
+            /* Отступы от краев экрана */
+            padding: 20px; 
+        }
+
+        /* Основной контейнер теперь тянется на всю ширину */
+        .app-container {
+            width: 100%;
+            max-width: 100%; 
+            position: relative;
+        }
+
+        /* Заголовки */
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        /* Стекломорфизм (прозрачные плашки) */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+        }
+
+        /* Секция профиля */
+        .profile-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .photo-upload {
+            width: 120px; 
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            height: 180px;
+        }
+
+        .photo-upload svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 8px;
+            stroke: white;
+        }
+
+        .photo-upload span {
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        .profile-info {
+            flex-grow: 1; 
+            padding: 15px;
+            font-size: 14px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 180px;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .label {
+            font-weight: 600;
+            color: var(--text-white);
+        }
+
+        .value {
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+
+        /* Кнопка редактирования */
+        .edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .edit-icon {
+            width: 16px;
+            height: 16px;
+            fill: white;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Поиск */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(60, 90, 121, 0.3);
+            border: none;
+            border-radius: 25px;
+            padding: 14px 50px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        /* Список пациентов */
+        .patient-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .patient-card {
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 12px;
+            width: 100%;
+        }
+
+        .patient-card:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .patient-name {
+            color: var(--text-dark);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .arrow-icon {
+            width: 10px;
+            height: 16px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .scrollbar-indicator {
+            position: fixed; 
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 60px;
+            width: 4px;
+            background: white;
+            border-radius: 2px;
+            opacity: 0.6;
+        }
+
+        .footer-arrow {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            padding-bottom: 20px;
+        }
+        
+        .circle-arrow {
+            width: 40px;
+            height: 40px;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .circle-arrow:hover {
+            transform: translateY(3px);
+        }
+
+        @media (max-width: 360px) {
+            .profile-section {
+                flex-direction: column;
+            }
+            .photo-upload, .profile-info {
+                width: 100%;
+                height: auto;
+                min-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <h1>Личный кабинет</h1>
+
+        <div class="profile-section">
+            <div class="glass-panel photo-upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Загрузить фотографию</span>
+            </div>
+
+            <div class="glass-panel profile-info">
+                <div class="info-row">
+                    <span class="label">ФИО: </span>
+                    <span class="value">Георгий Валерьевич Греков</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Дата рождения: </span>
+                    <span class="value">14.05.1990 г.</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Опыт работы: </span>
+                    <span class="value">6 лет</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Помощь страдающим: </span>
+                    <span class="value" style="font-weight: 500;">птср, сдвг, депрессивными расстройствами.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="edit-actions">
+            <svg class="edit-icon" viewBox="0 0 24 24">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            <button class="btn-edit">Редактировать</button>
+        </div>
+
+        <h2>Список пациентов</h2>
+
+        <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="">
+        </div>
+
+        <div class="patient-list" id="patientList">
+            
+            <!-- ДОБАВЛЕН ПЕРЕХОД ДЛЯ ЭТОГО ПАЦИЕНТА -->
+            <div class="glass-panel patient-card" onclick="window.location.href='therapist_profile.html'">
+                <span class="patient-name">Борис Викторович Лукин</span>
+                <svg class="arrow-icon" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+
+            <div class="glass-panel patient-card">
+                <span class="patient-name">Андрей Иванов</span>
+                <svg class="arrow-icon" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+
+            <div class="glass-panel patient-card">
+                <span class="patient-name">Валентин Рубенко</span>
+                <svg class="arrow-icon" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+
+            <div class="glass-panel patient-card">
+                <span class="patient-name">Анна Векина</span>
+                <svg class="arrow-icon" viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+
+        </div>
+
+        <div class="footer-arrow">
+            <div class="circle-arrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="scrollbar-indicator"></div>
+
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const patientList = document.getElementById('patientList');
+        const patients = patientList.getElementsByClassName('patient-card');
+
+        searchInput.addEventListener('keyup', function(e) {
+            const term = e.target.value.toLowerCase();
+
+            Array.from(patients).forEach(function(patient) {
+                const name = patient.querySelector('.patient-name').textContent;
+                if (name.toLowerCase().indexOf(term) != -1) {
+                    patient.style.display = 'flex';
+                } else {
+                    patient.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

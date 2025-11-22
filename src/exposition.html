@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выберите экспозицию</title>
+    <style>
+        :root {
+            --text-white: #ffffff;
+            --text-dark: #3c5a79;
+            --glass-bg: rgba(255, 255, 255, 0.20);
+            /* Убрал активный фон, чтобы он не перекрывал картинку */
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --card-radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(160deg, #9aabbd 0%, #8faecf 40%, #99b2cd 100%);
+            min-height: 100vh;
+            color: var(--text-white);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin: 0; 
+        }
+
+        /* Заголовки */
+        h1 {
+            width: 100%;
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        .category-title {
+            width: 100%;
+            color: var(--text-dark);
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        /* --- Карусель (ШИРОКАЯ) --- */
+        .carousel-3d-container {
+            position: relative;
+            width: 100vw; 
+            margin-left: -20px; 
+            height: 350px; 
+            margin-bottom: 30px;
+            margin-top: 10px;
+            perspective: 1000px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .carousel-card {
+            position: absolute;
+            width: 70%; 
+            max-width: 800px;
+            height: 100%;
+            
+            background-color: var(--glass-bg); /* Цвет подложки, если картинка не прогрузится */
+            
+            /* НАСТРОЙКИ ДЛЯ ИЗОБРАЖЕНИЙ */
+            background-size: cover;       /* Растягиваем фото на весь блок */
+            background-position: center;  /* Центрируем фото */
+            background-repeat: no-repeat;
+            
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            
+            /* Убираем текст, если он есть, чтобы не мешал фото */
+            color: transparent; 
+        }
+
+        /* Активная карта (Центр) */
+        .carousel-card.active {
+            transform: translateX(0) scale(1);
+            z-index: 10;
+            opacity: 1;
+            /* Убрали перекрытие цветом, добавили яркую рамку и тень */
+            border: 2px solid white;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Левая карта */
+        .carousel-card.prev {
+            transform: translateX(-60%) scale(0.85);
+            z-index: 5;
+            opacity: 0.6;
+            filter: blur(2px) brightness(0.7); /* Чуть темнее неактивные */
+        }
+
+        /* Правая карта */
+        .carousel-card.next {
+            transform: translateX(60%) scale(0.85);
+            z-index: 5;
+            opacity: 0.6;
+            filter: blur(2px) brightness(0.7);
+        }
+
+        .carousel-card.hidden {
+            transform: translateX(0) scale(0.5);
+            z-index: 0;
+            opacity: 0;
+        }
+
+        /* Описание */
+        h2 {
+            width: 100%;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .description-panel {
+            width: 100%;
+            flex-grow: 1;
+            min-height: 250px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3); 
+            border-radius: 20px;
+            padding: 20px;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+
+        .description-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.95);
+            text-align: left;
+        }
+        
+        .scrollbar-indicator {
+            position: fixed;
+            right: 5px;
+            top: 60%;
+            height: 60px;
+            width: 4px;
+            background: white;
+            border-radius: 2px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <h1>Выберите экспозицию</h1>
+        <div class="category-title">Боевые действия</div>
+
+        <!-- Широкая карусель с картинками -->
+        <div class="carousel-3d-container">
+            <!-- Карточка 1: img1.jpg -->
+            <div class="carousel-card" data-index="0" 
+                 style="background-image: url('img1.jpg');"
+                 onclick="window.location.href='spectate.html'">
+            </div>
+            
+            <!-- Карточка 2: img2.jpg -->
+            <div class="carousel-card" data-index="1" 
+                 style="background-image: url('img2.jpg');">
+            </div>
+            
+            <!-- Карточка 3: img3.jpg -->
+            <div class="carousel-card" data-index="2" 
+                 style="background-image: url('img3.jpg');">
+            </div>
+        </div>
+
+        <h2>Описание</h2>
+        
+        <div class="description-panel">
+            <p class="description-text" id="descText">
+                <!-- Текст заполнится JavaScript-ом -->
+            </p>
+        </div>
+
+        <div class="scrollbar-indicator"></div>
+
+    </div>
+
+    <script>
+        const data = [
+            { title: "Экспозиция 1", desc: "<b>Первая сцена (img1.jpg).</b><br>Здесь отображается первая боевая сцена. Широкий формат позволяет лучше рассмотреть детали окружения." },
+            { title: "Экспозиция 2", desc: "<b>Вторая сцена (img2.jpg).</b><br>Это описание для второй фотографии. Эффект присутствия усилен благодаря размеру карточки." },
+            { title: "Экспозиция 3", desc: "<b>Третья сцена (img3.jpg).</b><br>Третья локация. Интерфейс остается удобным и адаптивным на мобильных устройствах." }
+        ];
+
+        const cards = document.querySelectorAll('.carousel-card');
+        const descText = document.getElementById('descText');
+        let currentIndex = 0; 
+
+        function updateCarousel() {
+            const total = cards.length;
+            cards.forEach((card, index) => {
+                card.className = 'carousel-card'; // Сброс классов
+                
+                if (index === currentIndex) {
+                    card.classList.add('active');
+                    // Обновляем текст с небольшой задержкой для плавности
+                    setTimeout(() => { descText.innerHTML = data[index].desc; }, 100);
+                } else if (index === (currentIndex - 1 + total) % total) {
+                    card.classList.add('prev');
+                } else if (index === (currentIndex + 1) % total) {
+                    card.classList.add('next');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        cards.forEach((card, index) => {
+            card.addEventListener('click', () => {
+                // Если кликнули на уже активную (кроме первой, у которой есть ссылка), ничего не делаем
+                // Или можно добавить переход на другие страницы здесь
+                
+                if (currentIndex !== index) {
+                    currentIndex = index;
+                    updateCarousel();
+                } else {
+                    // Если это первая карта, сработает onclick в HTML (переход на spectate.html)
+                    // Для остальных можно добавить логику здесь, если нужно
+                }
+            });
+        });
+
+        // Инициализация
+        updateCarousel();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отслеживание сеанса</title>
+    <style>
+        :root {
+            --text-white: #ffffff;
+            --text-dark: #3c5a79;
+            --glass-bg: rgba(255, 255, 255, 0.20);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --emergency-red: #8b4b4b;
+            --card-radius: 20px;
+            --btn-green: #4b8b5a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            outline: none;
+        }
+
+        body {
+            background: linear-gradient(160deg, #9aabbd 0%, #8faecf 40%, #99b2cd 100%);
+            min-height: 100vh;
+            color: var(--text-white);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: left;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- Экран монитора --- */
+        .monitor-panel {
+            width: 100%;
+            aspect-ratio: 16 / 9; 
+            min-height: 300px; 
+            background: #000000; 
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            box-shadow: var(--glass-shadow);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #videoStream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            display: none;
+            border-radius: var(--card-radius);
+        }
+
+        .stream-status {
+            position: absolute;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            z-index: 1;
+            display: none;
+            pointer-events: none;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+
+        /* --- Кнопка Play --- */
+        .play-btn-overlay {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s, background 0.2s;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .play-btn-overlay:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .play-icon {
+            width: 0; 
+            height: 0; 
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 26px solid white;
+            margin-left: 6px;
+        }
+
+        /* --- Кнопка Реконнекта --- */
+        .reconnect-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: none; 
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .reconnect-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        .reconnect-btn:active {
+            transform: rotate(180deg);
+        }
+
+        .reconnect-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* --- Остальные элементы --- */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto 25px auto;
+            gap: 10px;
+        }
+
+        .glass-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: transform 0.1s;
+            flex-shrink: 0;
+        }
+
+        .glass-btn:active {
+            transform: scale(0.95);
+        }
+
+        .glass-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .glass-btn span {
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+        }
+
+        .emergency-btn {
+            background: var(--emergency-red);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 0 auto 30px auto;
+            display: block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .subtitle-label {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: left;
+            padding-left: 5px;
+        }
+
+        .subtitle-input-container {
+            width: 100%;
+            flex-grow: 1;
+            min-height: 100px;
+            background: rgba(60, 90, 121, 0.35); 
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .subtitle-input {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+            resize: none;
+        }
+
+        .subtitle-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* --- МОДАЛЬНОЕ ОКНО ДЛЯ IP --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none; /* Скрыто по умолчанию */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: rgba(60, 80, 100, 0.85);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .modal-desc {
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .ip-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .ip-input:focus {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+        }
+
+        .modal-btn {
+            background: var(--btn-green);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            width: 100%;
+        }
+
+        .modal-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <h1>Отслеживание сеанса</h1>
+
+        <!-- Монитор -->
+        <div class="monitor-panel">
+            
+            <!-- Кнопка Реконнекта -->
+            <div class="reconnect-btn" id="reconnectBtn" onclick="tryReconnect()" title="Обновить видео">
+                <svg viewBox="0 0 24 24">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </div>
+
+            <div id="statusText" class="stream-status">Подключение...</div>
+            
+            <div class="play-btn-overlay" id="startBtn" onclick="startStream()">
+                <div class="play-icon"></div>
+            </div>
+
+            <img id="videoStream" src="" alt="Stream">
+        </div>
+
+        <div class="controls-row">
+            <button class="glass-btn">
+                <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <button class="glass-btn">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </button>
+            <button class="glass-btn">
+                <span>EMDR</span>
+            </button>
+            <button class="glass-btn">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </button>
+        </div>
+
+        <button class="emergency-btn" onclick="stopStreamAndAlert()">
+            Экстренный выход
+        </button>
+
+        <div class="subtitle-label">Субтитры</div>
+        <div class="subtitle-input-container">
+            <textarea class="subtitle-input" placeholder="Введите сообщение для пациента..."></textarea>
+        </div>
+
+    </div>
+
+    <!-- Модальное окно для ввода IP -->
+    <div id="ipModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">Ошибка подключения</div>
+            <div class="modal-desc">Не удалось подключиться к стандартному адресу localhost:8081.<br>Введите IP адрес и порт вручную:</div>
+            
+            <input type="text" id="customIpInput" class="ip-input" placeholder="192.168.0.100:81" value="192.168.">
+            
+            <button class="modal-btn" onclick="saveAndConnect()">Подключиться</button>
+        </div>
+    </div>
+
+    <script>
+        const videoStream = document.getElementById('videoStream');
+        const startBtn = document.getElementById('startBtn');
+        const reconnectBtn = document.getElementById('reconnectBtn');
+        const statusText = document.getElementById('statusText');
+        
+        const ipModal = document.getElementById('ipModal');
+        const customIpInput = document.getElementById('customIpInput');
+
+        // Исходный адрес по умолчанию
+        const DEFAULT_URL = 'http://localhost:8081';
+        
+        // Текущий рабочий адрес (может меняться)
+        let currentStreamUrl = DEFAULT_URL;
+        let isStreaming = false;
+
+        // Флаг, чтобы понимать, первый ли это запуск (для авто-показа модалки)
+        let isFirstAttempt = true;
+
+        function startStream() {
+            if (isStreaming) return;
+            
+            // Скрываем кнопку play, показываем статус
+            startBtn.style.display = 'none';
+            statusText.style.display = 'block';
+            statusText.textContent = 'Поиск сервера...';
+            
+            attemptConnection(currentStreamUrl);
+        }
+
+        function attemptConnection(url) {
+            // Сбрасываем src перед установкой нового
+            videoStream.src = '';
+            
+            // Добавляем время, чтобы избежать кэширования
+            const timeStampedUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+
+            // Устанавливаем обработчики ДО присвоения src
+            videoStream.onload = function() {
+                // Успешное соединение
+                console.log("Connected to " + url);
+                statusText.style.display = 'none';
+                videoStream.style.display = 'block';
+                reconnectBtn.style.display = 'flex';
+                isStreaming = true;
+                isFirstAttempt = false; // Сбрасываем флаг первой попытки
+            };
+
+            videoStream.onerror = function() {
+                console.log("Error connecting to " + url);
+                
+                // Если это была первая попытка и она не удалась — показываем ввод IP
+                if (isFirstAttempt) {
+                    statusText.textContent = 'Сервер не найден';
+                    videoStream.style.display = 'none';
+                    openIpModal();
+                } else {
+                    // Если это реконнект или уже был введен IP, просто пишем ошибку
+                    statusText.textContent = 'Ошибка соединения';
+                    statusText.style.display = 'block';
+                    videoStream.style.display = 'none';
+                    
+                    // Если мы уже не в первой попытке, возвращаем кнопку Play
+                    // чтобы можно было нажать и попробовать снова (или реконнект)
+                     if (!isStreaming) {
+                        // Можно показать модалку снова, если совсем всё плохо
+                        // но пока просто оставим текст
+                    }
+                }
+            };
+
+            // Запуск загрузки
+            videoStream.src = timeStampedUrl;
+        }
+
+        // Открытие модального окна
+        function openIpModal() {
+            ipModal.style.display = 'flex';
+            customIpInput.focus();
+            // Можно предзаполнить старым значением, если нужно
+        }
+
+        // Обработка кнопки в модальном окне
+        function saveAndConnect() {
+            let inputVal = customIpInput.value.trim();
+            
+            if (!inputVal) {
+                alert("Введите адрес!");
+                return;
+            }
+
+            // Добавляем http:// если пользователь забыл
+            if (!inputVal.startsWith('http://') && !inputVal.startsWith('https://')) {
+                inputVal = 'http://' + inputVal;
+            }
+
+            // Обновляем глобальную переменную URL
+            currentStreamUrl = inputVal;
+            
+            // Закрываем окно
+            ipModal.style.display = 'none';
+            
+            // Считаем, что мы уже "попробовали" дефолт, так что флаг firstAttempt сбрасываем,
+            // чтобы при ошибке ввода IP просто писалось "Ошибка", а не снова открывалась модалка (хотя можно и оставить).
+            // Но лучше позволить ошибке сработать, чтобы пользователь мог нажать реконнект.
+            // Однако логичнее: если пользователь ввел новый IP, мы пытаемся подключиться как в первый раз к этому IP.
+            statusText.textContent = 'Подключение к ' + inputVal + '...';
+            statusText.style.display = 'block';
+            
+            attemptConnection(currentStreamUrl);
+        }
+
+        function tryReconnect() {
+            // Анимация кнопки
+            reconnectBtn.style.transform = 'rotate(180deg)';
+            setTimeout(() => reconnectBtn.style.transform = 'rotate(0deg)', 300);
+            
+            statusText.textContent = 'Реконнект...';
+            statusText.style.display = 'block';
+            videoStream.style.display = 'none';
+            
+            // Пытаемся снова подключиться к ТЕКУЩЕМУ сохраненному адресу
+            attemptConnection(currentStreamUrl);
+        }
+
+        function stopStreamAndAlert() {
+            videoStream.src = '';
+            videoStream.style.display = 'none';
+            reconnectBtn.style.display = 'none';
+            startBtn.style.display = 'flex';
+            statusText.style.display = 'none';
+            isStreaming = false;
+            isFirstAttempt = true; // Сбрасываем для следующего "чистого" запуска
+            alert('Экстренный выход активирован');
+        }
+        
+        // Позволить нажать Enter в поле ввода IP
+        customIpInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                saveAndConnect();
+            }
+        });
+    </script>
+
+</body>
+</html>
