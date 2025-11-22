@@ -177,10 +177,16 @@
             backdrop-filter: blur(8px);
             transition: transform 0.1s;
             flex-shrink: 0;
+            color: white;
+            text-decoration: none;
         }
 
         .glass-btn:active {
             transform: scale(0.95);
+        }
+        
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .glass-btn svg {
@@ -316,6 +322,102 @@
         .modal-btn:active {
             transform: scale(0.98);
         }
+
+        /* --- Стили для механики паузы и сообщений --- */
+        .chat-controls {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .pause-btn {
+            width: 100%;
+            padding: 18px 35px;
+            font-size: 20px;
+            background: rgba(52, 152, 219, 0.8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .pause-btn:hover {
+            background: rgba(41, 128, 185, 0.9);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+        
+        .pause-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Стили для субтитров с кнопкой отправки */
+        .subtitle-section {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .subtitle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle-label {
+            font-size: 18px;
+            font-weight: 700;
+            text-align: left;
+            padding-left: 5px;
+            margin: 0;
+        }
+
+        .send-subtitle-btn {
+            padding: 10px 20px;
+            background: rgba(44, 130, 201, 0.8);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            white-space: nowrap;
+        }
+        
+        .send-subtitle-btn:hover {
+            background: rgba(37, 115, 167, 0.9);
+        }
+
+        .subtitle-input-with-btn {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .subtitle-input-container {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(60, 90, 121, 0.35); 
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -345,6 +447,14 @@
             <img id="videoStream" src="" alt="Stream">
         </div>
 
+        <!-- Механика паузы -->
+        <div class="chat-controls">
+            <button class="pause-btn" onclick="sendToGodot()">
+                <span id="pauseIcon">⏸️</span>
+                <span id="pauseText">Пауза</span>
+            </button>
+        </div>
+
         <div class="controls-row">
             <button class="glass-btn">
                 <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -352,11 +462,10 @@
             <button class="glass-btn">
                 <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </button>
-            <button class="glass-btn">
+            
+            <!-- Кнопка EMDR с подключенной функцией -->
+            <button class="glass-btn" onclick="startEmdr()">
                 <span>EMDR</span>
-            </button>
-            <button class="glass-btn">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             </button>
         </div>
 
@@ -364,9 +473,20 @@
             Экстренный выход
         </button>
 
-        <div class="subtitle-label">Субтитры</div>
-        <div class="subtitle-input-container">
-            <textarea class="subtitle-input" placeholder="Введите сообщение для пациента..."></textarea>
+        <!-- Субтитры с кнопкой отправки -->
+        <div class="subtitle-section">
+            <div class="subtitle-header">
+                <div class="subtitle-label">Субтитры</div>
+                <button class="send-subtitle-btn" onclick="sendSubtitleMessage()">
+                    <span>📨</span>
+                    <span>Отправить субтитры</span>
+                </button>
+            </div>
+            <div class="subtitle-input-with-btn">
+                <div class="subtitle-input-container">
+                    <textarea class="subtitle-input" id="subtitleInput" placeholder="Введите сообщение для пациента..."></textarea>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -375,7 +495,7 @@
     <div id="ipModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-title">Ошибка подключения</div>
-            <div class="modal-desc">Не удалось подключиться к стандартному адресу localhost:8081.<br>Введите IP адрес и порт вручную:</div>
+            <div class="modal-desc">Не удалось подключиться к стандартному адресу localhost:8081.<br>Введите IP адрес и порт видео-потока:</div>
             
             <input type="text" id="customIpInput" class="ip-input" placeholder="192.168.0.100:81" value="192.168.">
             
@@ -388,84 +508,156 @@
         const startBtn = document.getElementById('startBtn');
         const reconnectBtn = document.getElementById('reconnectBtn');
         const statusText = document.getElementById('statusText');
+        const subtitleInput = document.getElementById('subtitleInput');
         
         const ipModal = document.getElementById('ipModal');
         const customIpInput = document.getElementById('customIpInput');
 
-        // Исходный адрес по умолчанию
-        const DEFAULT_URL = 'http://localhost:8081';
+        // Исходные настройки
+        const DEFAULT_STREAM_URL = 'http://localhost:8081';
+        const DEFAULT_CONTROL_URL = 'http://localhost:9080';
         
-        // Текущий рабочий адрес (может меняться)
-        let currentStreamUrl = DEFAULT_URL;
+        // Текущие рабочие адреса
+        let currentStreamUrl = DEFAULT_STREAM_URL;
+        let currentControlUrl = DEFAULT_CONTROL_URL;
+        
         let isStreaming = false;
-
-        // Флаг, чтобы понимать, первый ли это запуск (для авто-показа модалки)
         let isFirstAttempt = true;
+        let isPaused = false;
+        
+        // --- ФУНКЦИИ УПРАВЛЕНИЯ (TCP) ---
+
+        function sendToGodot() {
+            const btn = document.querySelector('.pause-btn');
+            const icon = document.getElementById('pauseIcon');
+            const text = document.getElementById('pauseText');
+            
+            // Анимация нажатия
+            btn.style.transform = 'scale(0.98)';
+            setTimeout(() => { btn.style.transform = ''; }, 150);
+            
+            // Отправка запроса (используем динамический URL)
+            fetch(`${currentControlUrl}/button_pressed`)
+                .then(response => {
+                    isPaused = !isPaused;
+                    if (isPaused) {
+                        icon.textContent = '▶️';
+                        text.textContent = 'Продолжить';
+                    } else {
+                        icon.textContent = '⏸️';
+                        text.textContent = 'Пауза';
+                    }
+                    console.log("Статус паузы изменен");
+                })
+                .catch(err => {
+                    console.error("Ошибка паузы:", err);
+                    btn.style.background = '#e74c3c';
+                    setTimeout(() => {
+                        btn.style.background = isPaused ? 'rgba(41, 128, 185, 0.9)' : 'rgba(52, 152, 219, 0.8)';
+                    }, 1000);
+                });
+        }
+
+        // НОВАЯ ФУНКЦИЯ ДЛЯ EMDR
+        function startEmdr() {
+            const btn = event.currentTarget; // Получаем нажатую кнопку
+            
+            // Анимация
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => { btn.style.transform = ''; }, 150);
+            
+            console.log("Отправка команды EMDR...");
+            
+            fetch(`${currentControlUrl}/emdr_start`)
+                .then(response => {
+                    console.log("EMDR меню открыто в игре");
+                    // Визуальный отклик - кратковременно меняем цвет
+                    const originalBg = btn.style.background;
+                    btn.style.background = 'rgba(75, 139, 90, 0.5)'; // Зеленоватый
+                    setTimeout(() => { btn.style.background = originalBg; }, 500);
+                })
+                .catch(err => {
+                    console.error("Ошибка EMDR:", err);
+                    btn.style.background = 'rgba(139, 75, 75, 0.5)'; // Красноватый при ошибке
+                    setTimeout(() => { btn.style.background = ''; }, 1000);
+                });
+        }
+
+        function sendSubtitleMessage() {
+            const message = subtitleInput.value.trim();
+            
+            if(message) {
+                fetch(`${currentControlUrl}/chat_message`, {
+                    method: "POST",
+                    body: message
+                })
+                .then(response => {
+                    console.log("Сообщение отправлено:", message);
+                    const sendBtn = document.querySelector('.send-subtitle-btn');
+                    const originalText = sendBtn.innerHTML;
+                    sendBtn.innerHTML = '<span>✓</span><span>Отправлено</span>';
+                    sendBtn.style.background = 'rgba(39, 174, 96, 0.8)';
+                    
+                    setTimeout(() => {
+                        sendBtn.innerHTML = originalText;
+                        sendBtn.style.background = 'rgba(44, 130, 201, 0.8)';
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error("Ошибка отправки чата:", err);
+                });
+            }
+        }
+
+        subtitleInput.addEventListener('keydown', function(e) {
+            if(e.ctrlKey && e.key === 'Enter') {
+                sendSubtitleMessage();
+            }
+        });
+
+        // --- ФУНКЦИИ ВИДЕО И ПОДКЛЮЧЕНИЯ ---
 
         function startStream() {
             if (isStreaming) return;
-            
-            // Скрываем кнопку play, показываем статус
             startBtn.style.display = 'none';
             statusText.style.display = 'block';
             statusText.textContent = 'Поиск сервера...';
-            
             attemptConnection(currentStreamUrl);
         }
 
         function attemptConnection(url) {
-            // Сбрасываем src перед установкой нового
             videoStream.src = '';
-            
-            // Добавляем время, чтобы избежать кэширования
             const timeStampedUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
 
-            // Устанавливаем обработчики ДО присвоения src
             videoStream.onload = function() {
-                // Успешное соединение
                 console.log("Connected to " + url);
                 statusText.style.display = 'none';
                 videoStream.style.display = 'block';
                 reconnectBtn.style.display = 'flex';
                 isStreaming = true;
-                isFirstAttempt = false; // Сбрасываем флаг первой попытки
+                isFirstAttempt = false;
             };
 
             videoStream.onerror = function() {
                 console.log("Error connecting to " + url);
-                
-                // Если это была первая попытка и она не удалась — показываем ввод IP
                 if (isFirstAttempt) {
                     statusText.textContent = 'Сервер не найден';
                     videoStream.style.display = 'none';
                     openIpModal();
                 } else {
-                    // Если это реконнект или уже был введен IP, просто пишем ошибку
                     statusText.textContent = 'Ошибка соединения';
                     statusText.style.display = 'block';
                     videoStream.style.display = 'none';
-                    
-                    // Если мы уже не в первой попытке, возвращаем кнопку Play
-                    // чтобы можно было нажать и попробовать снова (или реконнект)
-                     if (!isStreaming) {
-                        // Можно показать модалку снова, если совсем всё плохо
-                        // но пока просто оставим текст
-                    }
                 }
             };
-
-            // Запуск загрузки
             videoStream.src = timeStampedUrl;
         }
 
-        // Открытие модального окна
         function openIpModal() {
             ipModal.style.display = 'flex';
             customIpInput.focus();
-            // Можно предзаполнить старым значением, если нужно
         }
 
-        // Обработка кнопки в модальном окне
         function saveAndConnect() {
             let inputVal = customIpInput.value.trim();
             
@@ -474,21 +666,25 @@
                 return;
             }
 
-            // Добавляем http:// если пользователь забыл
             if (!inputVal.startsWith('http://') && !inputVal.startsWith('https://')) {
                 inputVal = 'http://' + inputVal;
             }
 
-            // Обновляем глобальную переменную URL
+            // 1. Обновляем адрес видео-потока (порт обычно 8081)
             currentStreamUrl = inputVal;
             
-            // Закрываем окно
+            // 2. Обновляем адрес управления (порт 9080)
+            // Мы берем ту же часть IP, но меняем порт
+            try {
+                const urlObj = new URL(inputVal);
+                // Используем тот же хостнейм (IP), но жестко ставим порт 9080 для управления
+                currentControlUrl = `${urlObj.protocol}//${urlObj.hostname}:9080`;
+                console.log("Control URL updated to:", currentControlUrl);
+            } catch (e) {
+                console.warn("Не удалось распарсить URL для управления, используем дефолт");
+            }
+
             ipModal.style.display = 'none';
-            
-            // Считаем, что мы уже "попробовали" дефолт, так что флаг firstAttempt сбрасываем,
-            // чтобы при ошибке ввода IP просто писалось "Ошибка", а не снова открывалась модалка (хотя можно и оставить).
-            // Но лучше позволить ошибке сработать, чтобы пользователь мог нажать реконнект.
-            // Однако логичнее: если пользователь ввел новый IP, мы пытаемся подключиться как в первый раз к этому IP.
             statusText.textContent = 'Подключение к ' + inputVal + '...';
             statusText.style.display = 'block';
             
@@ -496,15 +692,11 @@
         }
 
         function tryReconnect() {
-            // Анимация кнопки
             reconnectBtn.style.transform = 'rotate(180deg)';
             setTimeout(() => reconnectBtn.style.transform = 'rotate(0deg)', 300);
-            
             statusText.textContent = 'Реконнект...';
             statusText.style.display = 'block';
             videoStream.style.display = 'none';
-            
-            // Пытаемся снова подключиться к ТЕКУЩЕМУ сохраненному адресу
             attemptConnection(currentStreamUrl);
         }
 
@@ -515,11 +707,10 @@
             startBtn.style.display = 'flex';
             statusText.style.display = 'none';
             isStreaming = false;
-            isFirstAttempt = true; // Сбрасываем для следующего "чистого" запуска
+            isFirstAttempt = true;
             alert('Экстренный выход активирован');
         }
         
-        // Позволить нажать Enter в поле ввода IP
         customIpInput.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 saveAndConnect();
